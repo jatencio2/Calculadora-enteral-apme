@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Nutricion Enteral - APME</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #eef4fb;
+  display: flex;
+  flex-direction: column;
+}
+:root {
+  --navy:     #0d2f5e;
+  --teal:     #0099b8;
+  --teal-lt:  #e0f7fb;
+  --green:    #059669;
+  --green-lt: #d1fae5;
+  --amber:    #d97706;
+  --amber-lt: #fef3c7;
+  --blue-lt:  #e8f0fe;
+  --blue-mid: #1a56db;
+  --g100: #f1f5f9;
+  --g200: #e2e8f0;
+  --g400: #94a3b8;
+  --g600: #475569;
+  --g800: #1e293b;
+  --white: #ffffff;
+}
+.app-header {
+  background: var(--navy);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  height: 72px;
+}
+.header-icon {
+  width: 44px; height: 44px;
+  background: var(--teal);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.app-header h1 { color: #fff; font-size: 18px; font-weight: 800; line-height: 1.1; }
+.app-header p  { color: rgba(255,255,255,0.55); font-size: 11px; margin-top: 2px; }
+.app-body {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.left-panel {
+  background: var(--white);
+  border-right: 1px solid var(--g200);
+  overflow-y: auto;
+  padding: 20px;
+  height: 100%;
+}
+.right-panel {
+  overflow-y: auto;
+  padding: 20px;
+  height: 100%;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--g200); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--g400); }
+.section { margin-bottom: 20px; }
+.section-title {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--g200);
+  font-size: 13px; font-weight: 800;
+  color: var(--navy);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.input-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 10px;
+}
+.input-group label {
+  display: block;
+  font-size: 11px; font-weight: 700;
+  color: var(--g600);
+  margin-bottom: 4px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.input-group input[type=number] {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--g200);
+  border-radius: 8px;
+  font-size: 14px; color: var(--g800);
+  background: var(--white); outline: none;
+  transition: border-color .15s;
+}
+.input-group input[type=number]:focus { border-color: var(--teal); }
+.range-label {
+  display: block;
+  font-size: 11px; font-weight: 700;
+  color: var(--g600);
+  margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+input[type=range] { width: 100%; cursor: pointer; accent-color: var(--teal); }
+#inp-debt  { accent-color: var(--amber); }
+#inp-bolos { accent-color: var(--navy); }
+.range-hints {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--g400);
+  margin-top: 2px; margin-bottom: 8px;
+}
+.calc-summary {
+  background: var(--teal-lt);
+  border: 1px solid rgba(0,153,184,.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.calc-summary-lbl  { font-size: 11px; font-weight: 700; color: var(--teal); margin-bottom: 4px; }
+.calc-summary-vals { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
+.cs-val { display: flex; align-items: baseline; gap: 4px; }
+.cs-big { font-size: 22px; font-weight: 900; color: var(--navy); }
+.cs-big.t { color: var(--teal); }
+.cs-unit { font-size: 12px; color: var(--g600); }
+.btn-group { display: flex; gap: 10px; margin-bottom: 14px; }
+.route-btn {
+  flex: 1; padding: 10px 0;
+  border-radius: 10px; border: none;
+  font-weight: 700; font-size: 14px;
+  cursor: pointer;
+  background: var(--g100); color: var(--g600);
+  transition: all .15s;
+}
+.route-btn.active { background: var(--navy); color: var(--white); }
+.pres-group { display: flex; gap: 6px; }
+.pres-btn {
+  flex: 1; padding: 7px 0;
+  border-radius: 8px; border: none;
+  font-weight: 700; font-size: 12px; cursor: pointer;
+  background: var(--g100); color: var(--g600);
+  transition: all .15s;
+}
+.pres-btn.active { background: var(--teal); color: var(--white); }
+.tag-container { display: flex; flex-wrap: wrap; gap: 6px; }
+.ctx-btn {
+  padding: 5px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: all .15s;
+  border: 1.5px solid var(--g200);
+  background: var(--white); color: var(--g600);
+}
+.ctx-btn.nut-active  { border-color: var(--green);  background: var(--green-lt); color: var(--green); }
+.ctx-btn.path-active { border-color: var(--teal);   background: var(--teal-lt); color: var(--teal); }
+.placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 60vh;
+  color: var(--g400); text-align: center;
+}
+.placeholder .ico { font-size: 56px; margin-bottom: 16px; }
+.placeholder h2   { font-size: 18px; font-weight: 700; color: var(--g600); margin-bottom: 8px; }
+.placeholder p    { font-size: 13px; max-width: 340px; }
+.summary-bar {
+  background: var(--navy);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+.summary-bar-lbl {
+  font-size: 11px; font-weight: 800;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 12px;
+  text-transform: uppercase; letter-spacing: .07em;
+}
+.summary-cells { display: flex; gap: 10px; }
+.s-cell {
+  flex: 1; background: rgba(255,255,255,.1);
+  border-radius: 10px; padding: 10px 12px; text-align: center;
+}
+.s-cell-lbl  { font-size: 10px; color: rgba(255,255,255,.5); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+.s-cell-val  { font-size: 22px; font-weight: 900; color: #fff; }
+.s-cell-unit { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 2px; }
+.s-ctx-tags  { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px; }
+.s-ctx-tag   { background: rgba(255,255,255,.15); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; }
+.results-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.res-count    { font-size: 13px; font-weight: 700; color: var(--navy); }
+.res-sort     { font-size: 11px; color: var(--g400); }
+.res-section-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; border-radius: 10px;
+  font-size: 12px; font-weight: 800;
+  margin-bottom: 12px;
+}
+.res-section-hdr.polvo   { background: var(--amber-lt); color: var(--amber); margin-top: 4px; }
+.res-section-hdr.liquido { background: var(--teal-lt);  color: var(--teal);  margin-top: 10px; }
+.product-card {
+  background: var(--white);
+  border: 1px solid var(--g200);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(13,47,94,.06);
+}
+.card-header {
+  background: var(--navy);
+  padding: 12px 16px;
+  display: flex; justify-content: space-between;
+  align-items: flex-start; gap: 8px;
+}
+.card-name   { font-size: 16px; font-weight: 800; color: #fff; line-height: 1.2; }
+.lab-badge {
+  display: inline-block; margin-top: 5px;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 12px;
+}
+.card-header-right { text-align: right; flex-shrink: 0; }
+.type-badge {
+  display: inline-block;
+  font-size: 11px; font-weight: 700; color: #fff;
+  padding: 3px 8px; border-radius: 12px; margin-bottom: 4px;
+}
+.type-badge.polvo   { background: var(--amber); }
+.type-badge.liquido { background: var(--teal); }
+.card-meta { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 2px; }
+.card-body { padding: 12px 16px; }
+.card-age  { font-size: 11px; color: var(--g400); margin-bottom: 8px; }
+.ind-tags  { margin-bottom: 10px; }
+.ind-tag {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 20px;
+  margin: 2px 2px 2px 0; white-space: nowrap;
+}
+.ind-tag.n { background: var(--teal-lt); color: var(--teal); }
+.ind-tag.m { background: var(--green-lt); color: var(--green); }
+.calc-box   { background: var(--g100); border-radius: 10px; padding: 10px 4px; margin-top: 4px; }
+.calc-box-t { font-size: 11px; font-weight: 800; color: var(--navy); padding: 0 10px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
+.c-row      { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-radius: 6px; margin-bottom: 2px; }
+.c-row.hi   { background: var(--amber-lt); }
+.c-row-lbl  { font-size: 12px; color: var(--g600); }
+.c-row-val  { font-size: 13px; font-weight: 600; color: var(--g800); }
+.c-row.hi .c-row-val { font-weight: 800; color: var(--amber); }
+.bolo-hdr   { font-size: 10px; font-weight: 800; color: var(--teal); padding: 0 10px; margin: 8px 0 4px; text-transform: uppercase; }
+.presc-box  { margin-top: 12px; border-radius: 10px; overflow: hidden; border: 2px solid var(--navy); }
+.presc-hdr  {
+  background: var(--navy);
+  padding: 6px 12px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 800; color: #fff;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.presc-cells { display: grid; grid-template-columns: 1fr 1fr; }
+.p-cell      { padding: 14px 16px; text-align: center; }
+.p-cell.dia  { background: var(--amber-lt); border-right: 1px solid var(--navy); }
+.p-cell.mes  { background: var(--blue-lt); }
+.p-cell-lbl  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.p-cell.dia .p-cell-lbl { color: var(--amber); }
+.p-cell.mes .p-cell-lbl { color: var(--blue-mid); }
+.p-cell-val  { font-size: 28px; font-weight: 900; color: var(--navy); line-height: 1; }
+.p-cell-unit { font-size: 11px; color: var(--g600); margin-top: 3px; }
+.p-cell-ref  { font-size: 10px; color: var(--g400); margin-top: 4px; font-style: italic; }
+.empty-state {
+  background: var(--white); border-radius: 14px;
+  padding: 40px 24px; text-align: center;
+  color: var(--g400); border: 2px dashed var(--g200);
+}
+.empty-state .ico { font-size: 40px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 16px; font-weight: 700; color: var(--g600); }
+.empty-state p  { font-size: 13px; margin-top: 6px; }
+#bolos-section { display: none; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-icon">&#x1F9EE;</div>
+  <div>
+    <h1>Calculadora de Nutricion Enteral</h1>
+    <p>Suplementacion Oral &amp; Enteral - APME - UNISINÚ - GIND</p>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <div class="left-panel">
+
+    <div class="section">
+      <div class="section-title"><span>&#x1F464;</span> Datos del paciente</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="inp-age">Edad (anos)</label>
+          <input type="number" id="inp-age" min="0" step="0.1" placeholder="ej. 45">
+        </div>
+        <div class="input-group">
+          <label for="inp-weight">Peso (kg)</label>
+          <input type="number" id="inp-weight" min="0" step="0.1" placeholder="ej. 65">
+        </div>
+      </div>
+      <div id="calc-summary-box"></div>
+      <div>
+        <label class="range-label" id="debt-label">
+          Deuda calorica: <strong style="color:var(--amber)">50%</strong> del VCT
+        </label>
+        <input type="range" id="inp-debt" min="5" max="100" step="5" value="50">
+        <div class="range-hints"><span>5%</span><span>50%</span><span>100%</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>&#x1F3E5;</span> Via de terapia nutricional</div>
+      <div class="btn-group">
+        <button class="route-btn" id="btn-oral"  onclick="setRoute('Oral')">Oral</button>
+        <button class="route-btn" id="btn-sonda" onclick="setRoute('Sonda')">Sonda</button>
+      </div>
+      <div id="bolos-section">
+        <label class="range-label" id="bolos-label">
+          N de bolos/dia: <strong style="color:var(--navy)">5</strong>
+        </label>
+        <input type="range" id="inp-bolos" min="1" max="12" step="1" value="5">
+        <div class="range-hints"><span>1</span><span>6</span><span>12</span></div>
+      </div>
+      <div class="pres-group">
+        <button class="pres-btn" id="btn-polvo"   onclick="setPres('Polvo')">Polvo</button>
+        <button class="pres-btn" id="btn-liquido" onclick="setPres('Liquido')">Liquido</button>
+        <button class="pres-btn active" id="btn-ambos" onclick="setPres('Ambos')">Ambos</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>&#x1F52C;</span> Contexto nutricional</div>
+      <div class="tag-container" id="nut-ctx"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>&#x1FAC0;</span> Contexto patologico</div>
+      <div class="tag-container" id="path-ctx"></div>
+    </div>
+
+  </div>
+
+  <div class="right-panel">
+    <div id="results"></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+var LAB_C = {
+  'Danone Nutricia':       {bg:'#ffe4e1',tx:'#9b1e1e'},
+  'Fresenius Kabi':        {bg:'#e0f0ff',tx:'#1a4a8a'},
+  'Nestle Health Science': {bg:'#fff3e0',tx:'#7c4700'},
+  'Boydorr':               {bg:'#f0fff4',tx:'#1a5c36'},
+  'Abbott':                {bg:'#f3e8ff',tx:'#5b21b6'}
+};
+function lc(lab){ return LAB_C[lab] || {bg:'#f1f5f9',tx:'#334155'}; }
+
+function kcalKg(a){
+  if(a<0.5) return 90; if(a<1) return 110;
+  if(a<4)   return 80; if(a<7) return 80;
+  if(a<11)  return 70; if(a<15) return 38;
+  if(a<18)  return 50; if(a<60) return 25;
+  return 30;
+}
+function ageRange(a){
+  if(a<0.5) return '0-0.5 anos';   if(a<1)  return '0.5-1 ano';
+  if(a<4)   return '1-3 anos';     if(a<7)  return '4-6 anos';
+  if(a<11)  return '7-10 anos';    if(a<15) return '11-14 anos';
+  if(a<18)  return '15-17 anos';   if(a<60) return '18-59 anos';
+  return '60 anos o mas';
+}
+
+var NUT_CTX = ['Bajo Peso al Nacer','Caquexia','Desnutricion','Sarcopenia'];
+var PATH_CTX = [
+  'ACV','Bariatrico','Cancer','Cardiopatia','Cirugia Mayor','Critico',
+  'Diabetes e hiperglucemia','Embarazo y Lactancia','Enfermedad Inflamatoria Intestinal',
+  'ERC Dialisis TRR','ERC Predialisis','Fibrosis','Hepatopatias','Malabsorcion',
+  'Neurodegenerativo','Pancreatitis','Paralisis Cerebral','Prematuros','Pulmonares',
+  'Quemaduras o Lesiones por Presion','Sepsis','Trauma','VIH-SIDA'
+];
+
+var P = [
+{t:'pw',lab:'Danone Nutricia',nm:'Fortisip Advanced',mi:18,ma:999,ct:'Lata',cq:280,gp:39.6,sc:6,wp:125,km:1.0,ind:['Desnutricion','ERC Predialisis','ERC Dialisis TRR','VIH-SIDA','Cirugia Mayor','Quemaduras o Lesiones por Presion']},
+{t:'pw',lab:'Danone Nutricia',nm:'Fortini',mi:2,ma:10,ct:'Lata',cq:400,gp:42.7,sc:7,wp:110,km:1.5,ind:['Desnutricion','VIH-SIDA','Cancer','Cardiopatia','Paralisis Cerebral']},
+{t:'pw',lab:'Nestle Health Science',nm:'Nutren Glytrol',mi:18,ma:999,ct:'Lata',cq:380,gp:42,sc:5,wp:180,km:0.9,ind:['Desnutricion','Cancer','Diabetes e hiperglucemia']},
+{t:'pw',lab:'Nestle Health Science',nm:'Nutren Senior',mi:18,ma:999,ct:'Lata',cq:370,gp:37,sc:3,wp:180,km:0.72,ind:['Desnutricion','Cancer','Sarcopenia','Neurodegenerativo']},
+{t:'pw',lab:'Boydorr',nm:'Proklein Kids Plus',mi:4,ma:10,ct:'Lata',cq:530,gp:53,sc:4,wp:100,km:1.5,ind:['ERC Predialisis','VIH-SIDA','Cancer','Paralisis Cerebral','Enfermedad Inflamatoria Intestinal','Critico','Fibrosis']},
+{t:'pw',lab:'Boydorr',nm:'Proklein NET',mi:4,ma:18,ct:'Lata',cq:420,gp:60,sc:5,wp:200,km:1.0,ind:['Desnutricion','VIH-SIDA','Quemaduras o Lesiones por Presion','Cancer','Enfermedad Inflamatoria Intestinal','Critico','Sepsis','Trauma']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey NET',mi:18,ma:999,ct:'Lata',cq:434,gp:62,sc:5,wp:200,km:1.0,ind:['Desnutricion','VIH-SIDA','Cancer','Neurodegenerativo','Trauma','Caquexia']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey Kalori',mi:14,ma:999,ct:'Lata',cq:460,gp:90,sc:7,wp:180,km:1.5,ind:['Desnutricion','Diabetes e hiperglucemia','Caquexia']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey Hepatic',mi:18,ma:999,ct:'Lata',cq:375,gp:75,sc:6,wp:125,km:1.5,ind:['Hepatopatias']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey Renal Cronico',mi:18,ma:999,ct:'Lata',cq:378,gp:90,sc:7,wp:180,km:1.6,ind:['ERC Predialisis']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey TRR',mi:18,ma:999,ct:'Lata',cq:336,gp:84,sc:6,wp:180,km:1.5,ind:['ERC Dialisis TRR']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey Neumo',mi:18,ma:999,ct:'Lata',cq:435,gp:87,sc:6,wp:180,km:1.5,ind:['Desnutricion','Pulmonares']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey EPOC',mi:18,ma:999,ct:'Lata',cq:420,gp:69,sc:6,wp:200,km:1.2,ind:['Desnutricion','Pulmonares']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey DM',mi:18,ma:999,ct:'Lata',cq:400,gp:46,sc:4,wp:200,km:0.96,ind:['Desnutricion','Cirugia Mayor','Diabetes e hiperglucemia','Sarcopenia','Pancreatitis','ACV']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey OnCare',mi:18,ma:999,ct:'Lata',cq:415,gp:83,sc:5,wp:160,km:1.5,ind:['Desnutricion','Cancer','Caquexia']},
+{t:'pw',lab:'Boydorr',nm:'Prowhey Bariatric',mi:14,ma:999,ct:'Lata',cq:306,gp:51,sc:3,wp:100,km:1.1,ind:['Bariatrico']},
+{t:'pw',lab:'Abbott',nm:'Similac Mama',mi:14,ma:999,ct:'Lata',cq:400,gp:36.5,sc:3,wp:150,km:1.3,ind:['Embarazo y Lactancia']},
+{t:'pw',lab:'Abbott',nm:'Similac NeoSure',mi:0,ma:1,ct:'Lata',cq:370,gp:8.8,sc:1,wp:60,km:0.74,ind:['Prematuros','Bajo Peso al Nacer']},
+{t:'pw',lab:'Abbott',nm:'Similac Rice',mi:0,ma:3,ct:'Lata',cq:400,gp:4.52,sc:1,wp:30,km:0.68,ind:['Desnutricion','Malabsorcion']},
+{t:'pw',lab:'Abbott',nm:'PediaSure',mi:2,ma:13,ct:'Lata',cq:400,gp:48.6,sc:5,wp:190,km:1.0,ind:['Desnutricion','Cancer','Cardiopatia','Paralisis Cerebral','Neurodegenerativo']},
+{t:'pw',lab:'Abbott',nm:'Ensure',mi:18,ma:999,ct:'Lata',cq:400,gp:53.4,sc:6,wp:195,km:1.0,ind:['Desnutricion','VIH-SIDA','Cancer','Paralisis Cerebral','Neurodegenerativo']},
+{t:'pw',lab:'Abbott',nm:'Ensure Advance',mi:18,ma:999,ct:'Lata',cq:400,gp:53.5,sc:6,wp:195,km:1.0,ind:['Desnutricion','VIH-SIDA','Cirugia Mayor','Cancer','Sarcopenia']},
+{t:'lq',rh:'sonda',lab:'Fresenius Kabi',nm:'Diben',mi:3,ma:999,ct:'Easy Bag',cq:500,km:1.0,ind:['Desnutricion','Cancer','Diabetes e hiperglucemia','Critico','Pancreatitis']},
+{t:'lq',rh:'sonda',lab:'Fresenius Kabi',nm:'Diben 1,5 KCAL HP',mi:18,ma:999,ct:'Easy Bag',cq:1000,km:1.5,ind:['Desnutricion','Cancer','Diabetes e hiperglucemia','Critico','Pulmonares','Pancreatitis','ACV']},
+{t:'lq',rh:'sonda',lab:'Fresenius Kabi',nm:'Fresubin ORIGINAL',mi:14,ma:999,ct:'Easy Bag',cq:500,km:1.0,ind:['Desnutricion','Neurodegenerativo','ACV']},
+{t:'lq',rh:'sonda',lab:'Fresenius Kabi',nm:'Fresubin HP ENERGY',mi:18,ma:999,ct:'Easy Bag',cq:500,km:1.5,ind:['Desnutricion','VIH-SIDA','Quemaduras o Lesiones por Presion','Cancer','Cardiopatia','Sarcopenia','Neurodegenerativo','Caquexia']},
+{t:'lq',rh:'sonda',lab:'Fresenius Kabi',nm:'Fresubin 2 KCAL HP',mi:18,ma:999,ct:'Easy Bag',cq:500,km:2.0,ind:['Desnutricion','Cancer','Cardiopatia','Neurodegenerativo','ACV']},
+{t:'lq',rh:'sonda',lab:'Fresenius Kabi',nm:'Survimed OPD HN',mi:3,ma:999,ct:'Easy Bag',cq:500,km:1.33,ind:['Desnutricion','Cancer','Enfermedad Inflamatoria Intestinal','Pancreatitis','Malabsorcion']},
+{t:'lq',rh:'sonda',lab:'Fresenius Kabi',nm:'Reconvan',mi:18,ma:999,ct:'Easy Bag',cq:500,km:1.5,ind:['Desnutricion','Quemaduras o Lesiones por Presion','Cancer','Sarcopenia','Critico']},
+{t:'lq',rh:'sonda',lab:'Danone Nutricia',nm:'Nutrison Protein Intense',mi:12,ma:999,ct:'Botella',cq:500,km:1.26,ind:['Desnutricion','Critico','Trauma','Pulmonares']},
+{t:'lq',rh:'sonda',lab:'Danone Nutricia',nm:'Nutrison 1.0 kcal/mL',mi:6,ma:999,ct:'Botella',cq:1000,km:1.0,ind:['Desnutricion','VIH-SIDA','Cancer','ACV']},
+{t:'lq',rh:'sonda',lab:'Danone Nutricia',nm:'Nutrison Advanced Diason Energy HP',mi:12,ma:999,ct:'Botella',cq:1000,km:1.5,ind:['Desnutricion','Cardiopatia','Diabetes e hiperglucemia','Sepsis']},
+{t:'lq',rh:'sonda',lab:'Danone Nutricia',nm:'Nutrison Advanced Peptisorb',mi:6,ma:999,ct:'Botella',cq:500,km:1.0,ind:['Desnutricion','Enfermedad Inflamatoria Intestinal','Malabsorcion']},
+{t:'lq',rh:'sonda',lab:'Nestle Health Science',nm:'Nutren 1.5 Sonda',mi:9,ma:999,ct:'Ultrapack',cq:1000,km:1.52,ind:['Desnutricion','Cancer','Sarcopenia','Neurodegenerativo']},
+{t:'lq',rh:'sonda',lab:'Nestle Health Science',nm:'Novasource GC 1.5',mi:18,ma:999,ct:'Botella',cq:1000,km:1.54,ind:['Desnutricion','VIH-SIDA','Cancer','Cardiopatia','Diabetes e hiperglucemia','Pulmonares']},
+{t:'lq',rh:'sonda',lab:'Nestle Health Science',nm:'Peptamen Intense VHP',mi:18,ma:999,ct:'Ultrapack',cq:1000,km:1.01,ind:['Desnutricion','Cardiopatia','Sepsis','Pancreatitis','ACV','Malabsorcion']},
+{t:'lq',rh:'sonda',lab:'Nestle Health Science',nm:'Impact Peptide 1.5',mi:18,ma:999,ct:'Ultrapack',cq:1000,km:1.51,ind:['Desnutricion','Cirugia Mayor','Cancer']},
+{t:'lq',rh:'sonda',lab:'Abbott',nm:'PediaSure Clinical LPC',mi:1,ma:13,ct:'LPC',cq:500,km:1.5,ind:['Desnutricion','Cancer']},
+{t:'lq',rh:'sonda',lab:'Abbott',nm:'Ensure Plus HN LPC',mi:14,ma:999,ct:'Botella',cq:1000,km:1.5,ind:['Desnutricion','Cancer','Sarcopenia']},
+{t:'lq',rh:'sonda',lab:'Abbott',nm:'Glucerna 1,5',mi:18,ma:999,ct:'LPC',cq:1000,km:1.5,ind:['Desnutricion','Diabetes e hiperglucemia']},
+{t:'lq',rh:'sonda',lab:'Abbott',nm:'Glucerna 1,0',mi:18,ma:999,ct:'LPC',cq:1500,km:1.0,ind:['Desnutricion','Diabetes e hiperglucemia']},
+{t:'lq',rh:'oral',lab:'Fresenius Kabi',nm:'Diben Drink',mi:10,ma:999,ct:'Botella',cq:200,km:1.5,ind:['Desnutricion','Diabetes e hiperglucemia','Critico']},
+{t:'lq',rh:'oral',lab:'Fresenius Kabi',nm:'Fresubin 2 kcal Drink',mi:10,ma:999,ct:'Botella',cq:200,km:2.0,ind:['Desnutricion','ERC Predialisis','ERC Dialisis TRR','VIH-SIDA','Cirugia Mayor','Quemaduras o Lesiones por Presion','Caquexia','Pulmonares']},
+{t:'lq',rh:'oral',lab:'Fresenius Kabi',nm:'Supportan Drink',mi:14,ma:999,ct:'Botella',cq:200,km:1.5,ind:['Desnutricion','Cancer','Caquexia']},
+{t:'lq',rh:'oral',lab:'Fresenius Kabi',nm:'Frebini Energy Fibre Drink',mi:1,ma:12,ct:'Botella',cq:200,km:1.5,ind:['Desnutricion','Paralisis Cerebral','Enfermedad Inflamatoria Intestinal','Fibrosis','Malabsorcion']},
+{t:'lq',rh:'oral',lab:'Fresenius Kabi',nm:'Fresubin Renal',mi:3,ma:999,ct:'Botella',cq:200,km:2.0,ind:['Desnutricion','ERC Predialisis']},
+{t:'lq',rh:'oral',lab:'Fresenius Kabi',nm:'Fresubin Hepa Drink',mi:3,ma:999,ct:'Botella',cq:200,km:1.3,ind:['Desnutricion','Hepatopatias']},
+{t:'lq',rh:'oral',lab:'Danone Nutricia',nm:'Fortisip Compact Protein',mi:6,ma:999,ct:'Botella',cq:125,km:2.45,ind:['Desnutricion','VIH-SIDA','Quemaduras o Lesiones por Presion','Cancer']},
+{t:'lq',rh:'oral',lab:'Danone Nutricia',nm:'Infatrini Liquido',mi:0,ma:2,ct:'Botella',cq:125,km:1.0,ind:['Desnutricion','Cardiopatia']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Peptamen Junior',mi:1,ma:13,ct:'Tetraprisma',cq:250,km:1.0,ind:['Paralisis Cerebral','Enfermedad Inflamatoria Intestinal','Fibrosis','Sepsis','Malabsorcion']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Peptamen with Prebio',mi:14,ma:999,ct:'Tetraprisma',cq:250,km:1.02,ind:['Desnutricion','Enfermedad Inflamatoria Intestinal','Critico','Pancreatitis','Malabsorcion']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Novasource Proline',mi:14,ma:999,ct:'Tetraprisma',cq:200,km:1.34,ind:['Quemaduras o Lesiones por Presion']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Impact',mi:18,ma:999,ct:'Tetraprisma',cq:200,km:1.07,ind:['Desnutricion','Cirugia Mayor','Cancer']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Nutren Pulmonary',mi:18,ma:999,ct:'Tetraprisma',cq:250,km:1.52,ind:['Pulmonares']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Glytrol Liquido',mi:18,ma:999,ct:'Tetraprisma',cq:250,km:1.01,ind:['Desnutricion','Diabetes e hiperglucemia','Enfermedad Inflamatoria Intestinal','Pulmonares','Malabsorcion']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Nutren 1.5 Oral',mi:9,ma:999,ct:'Tetraprisma',cq:250,km:1.52,ind:['Desnutricion','VIH-SIDA','Cancer','Trauma']},
+{t:'lq',rh:'oral',lab:'Nestle Health Science',nm:'Nutren Senior Liquido',mi:18,ma:999,ct:'Tetraprisma',cq:200,km:0.97,ind:['Desnutricion','Cancer','Sarcopenia','Neurodegenerativo']},
+{t:'lq',rh:'oral',lab:'Boydorr',nm:'Prowhey NET Liquido',mi:18,ma:999,ct:'Tetraprisma',cq:200,km:1.0,ind:['Desnutricion','VIH-SIDA','Cancer','Neurodegenerativo']},
+{t:'lq',rh:'oral',lab:'Boydorr',nm:'Prowhey DM Liquido',mi:18,ma:999,ct:'Tetraprisma',cq:200,km:0.97,ind:['Desnutricion','Diabetes e hiperglucemia','Sarcopenia']},
+{t:'lq',rh:'oral',lab:'Boydorr',nm:'Proklein Kids Liquido',mi:4,ma:10,ct:'Tetraprisma',cq:200,km:1.2,ind:['Desnutricion','Cancer','Paralisis Cerebral']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Similac Special Care 24',mi:0,ma:1,ct:'Frasco',cq:59,km:0.81,ind:['Prematuros','Bajo Peso al Nacer']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Similac NeoSure Liquido',mi:0,ma:1,ct:'Frasco',cq:59,km:0.74,ind:['Prematuros','Bajo Peso al Nacer']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Similac 1 Liquido',mi:0,ma:1,ct:'Botella',cq:59,km:0.64,ind:['Desnutricion','Prematuros','Bajo Peso al Nacer']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'PediaSure RPB Liquido',mi:2,ma:13,ct:'Botella',cq:220,km:1.0,ind:['Desnutricion']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'PediaSure 10+ Liquido',mi:10,ma:18,ct:'Botella',cq:220,km:1.04,ind:['Desnutricion']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'PediaSure Clinical Botella',mi:1,ma:13,ct:'Botella',cq:220,km:1.5,ind:['Desnutricion','Cancer']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Ensure RPB Liquido',mi:14,ma:999,ct:'Botella',cq:220,km:1.06,ind:['Desnutricion']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Ensure Clinical RPB',mi:14,ma:999,ct:'Botella',cq:220,km:1.5,ind:['Desnutricion','Sarcopenia','Caquexia']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Ensure Two Cal RPB',mi:14,ma:999,ct:'Botella',cq:200,km:2.0,ind:['Desnutricion','Enfermedad Inflamatoria Intestinal','Fibrosis','Malabsorcion']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Ensure Plus HN',mi:18,ma:999,ct:'Botella',cq:220,km:1.5,ind:['Desnutricion','VIH-SIDA','Cirugia Mayor','Quemaduras o Lesiones por Presion','Cancer','Cardiopatia','Neurodegenerativo','Critico','Sepsis','Trauma']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Vital 1,5 kcal',mi:14,ma:999,ct:'Botella',cq:220,km:1.5,ind:['Desnutricion','Enfermedad Inflamatoria Intestinal','Critico','Sepsis','Malabsorcion']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Pulmocare',mi:14,ma:999,ct:'Botella',cq:237,km:1.3,ind:['Desnutricion','Fibrosis','Pulmonares']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Nepro BP',mi:14,ma:999,ct:'Lata',cq:237,km:1.8,ind:['Desnutricion','ERC Predialisis']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Nepro AP',mi:14,ma:999,ct:'Lata',cq:237,km:1.8,ind:['Desnutricion','ERC Dialisis TRR']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Osmolite HN Plus',mi:18,ma:999,ct:'Lata',cq:237,km:1.2,ind:['Desnutricion','Sarcopenia','Neurodegenerativo','Enfermedad Inflamatoria Intestinal','ACV','Malabsorcion']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Glucerna',mi:14,ma:999,ct:'Botella',cq:220,km:0.97,ind:['Desnutricion','Diabetes e hiperglucemia']},
+{t:'lq',rh:'oral',lab:'Abbott',nm:'Glucerna 1,6',mi:18,ma:999,ct:'Botella',cq:220,km:1.6,ind:['Desnutricion','Quemaduras o Lesiones por Presion','Diabetes e hiperglucemia']}
+];
+
+var S = {
+  age:0, weight:0, debtPct:50,
+  nutCtx:[], pathCtx:[],
+  route:'', bolos:5, pres:'Ambos'
+};
+
+function r1(v){ return Math.round(v*10)/10; }
+function r0(v){ return Math.round(v); }
+
+function calcPowder(p,dk,route,bolos){
+  var mlNec  = dk/p.km;
+  var pFrac  = mlNec/p.wp;
+  var porc   = Math.ceil(pFrac);
+  var agua   = porc*p.wp;
+  var mlT    = agua;
+  var cdas   = porc*p.sc;
+  var grams  = r1(porc*p.gp);
+  var latas  = Math.ceil(grams/p.cq);
+  var gMes   = r1(grams*30);
+  var lMes   = Math.ceil(gMes/p.cq);
+  var kcalAp = r0(mlT*p.km);
+  return {
+    mlNec:r1(mlNec), porc:porc, agua:agua, mlT:mlT, cdas:cdas,
+    grams:grams, gMes:gMes, latas:latas, lMes:lMes, kcalAp:kcalAp,
+    mlBolo:   route==='Sonda'?r1(mlT/bolos):null,
+    aguaBolo: route==='Sonda'?r1(agua/bolos):null,
+    cdasBolo: route==='Sonda'?r1(cdas/bolos):null,
+    pBolo:    route==='Sonda'?r1(porc/bolos):null
+  };
+}
+
+function calcLiquid(p,dk,route,bolos){
+  var mlT    = dk/p.km;
+  var mlMes  = r1(mlT*30);
+  var unid   = Math.ceil(mlT/p.cq);
+  var uMes   = Math.ceil(mlMes/p.cq);
+  return {
+    mlT:r1(mlT), mlMes:mlMes, unid:unid, uMes:uMes,
+    mlBolo: route==='Sonda'?r1(mlT/bolos):null
+  };
+}
+
+function derived(){
+  var kk  = S.age>0 ? kcalKg(S.age) : null;
+  var rce = (kk&&S.weight>0) ? r0(kk*S.weight) : null;
+  var dk  = rce ? r0(rce*S.debtPct/100) : null;
+  return {kk:kk, rce:rce, dk:dk};
+}
+
+function inCtx(ind){
+  var all = S.nutCtx.concat(S.pathCtx);
+  for(var i=0;i<ind.length;i++){
+    for(var j=0;j<all.length;j++){
+      if(ind[i]===all[j]) return true;
+    }
+  }
+  return false;
+}
+
+function hasCtx(v){
+  return S.nutCtx.indexOf(v)>=0 || S.pathCtx.indexOf(v)>=0;
+}
+
+function getFiltered(){
+  var all = S.nutCtx.concat(S.pathCtx);
+  return P.filter(function(p){
+    if(S.age<p.mi||S.age>p.ma) return false;
+    if(S.pres==='Polvo'   && p.t!=='pw') return false;
+    if(S.pres==='Liquido' && p.t!=='lq') return false;
+    if(p.t==='lq'){
+      if(S.route==='Oral'  && p.rh==='sonda') return false;
+      if(S.route==='Sonda' && p.rh==='oral')  return false;
+    }
+    if(all.length===0) return true;
+    return inCtx(p.ind);
+  });
+}
+
+function esc(s){
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function plur(n,w){ return n+' '+w+(n!==1?'s':''); }
+
+function crow(lbl,val,hi){
+  return '<div class="c-row'+(hi?' hi':'')+'"><span class="c-row-lbl">'+esc(lbl)+'</span><span class="c-row-val">'+esc(val)+'</span></div>';
+}
+
+function prescBox(ct,cqStr,uLbl,uDia,uMes,rDia,rMes){
+  var rd = rDia ? '<div class="p-cell-ref">'+esc(rDia)+'</div>' : '';
+  var rm = rMes ? '<div class="p-cell-ref">'+esc(rMes)+'</div>' : '';
+  return '<div class="presc-box">'+
+    '<div class="presc-hdr">Presentacion requerida - '+esc(ct)+' '+esc(cqStr)+'</div>'+
+    '<div class="presc-cells">'+
+      '<div class="p-cell dia">'+
+        '<div class="p-cell-lbl">Por dia</div>'+
+        '<div class="p-cell-val">'+uDia+'</div>'+
+        '<div class="p-cell-unit">'+esc(plur(uDia,uLbl))+'</div>'+rd+
+      '</div>'+
+      '<div class="p-cell mes">'+
+        '<div class="p-cell-lbl">Por mes (30 dias)</div>'+
+        '<div class="p-cell-val">'+uMes+'</div>'+
+        '<div class="p-cell-unit">'+esc(plur(uMes,uLbl))+'</div>'+rm+
+      '</div>'+
+    '</div></div>';
+}
+
+function renderCard(p,dk,allCtx){
+  var isPw = p.t==='pw';
+  var c    = isPw ? calcPowder(p,dk,S.route,S.bolos) : calcLiquid(p,dk,S.route,S.bolos);
+  var lcc  = lc(p.lab);
+  var ag   = (p.mi===0?'RN':p.mi+' anos')+' - '+(p.ma>=999?'adulto mayor':p.ma+' anos');
+
+  var indH = '';
+  for(var i=0;i<p.ind.length;i++){
+    var m = allCtx.indexOf(p.ind[i])>=0;
+    indH += '<span class="ind-tag '+(m?'m':'n')+'">'+(m?'+ ':'')+esc(p.ind[i])+'</span>';
+  }
+
+  var calcH = '';
+  if(isPw){
+    calcH += crow('Volumen minimo requerido', c.mlNec+' mL/dia');
+    calcH += crow('Porciones/dia ceil', c.porc+' porciones');
+    calcH += crow('Agua a agregar', c.agua+' mL ('+c.porc+' x '+p.wp+' mL)');
+    calcH += crow('Volumen reconstituido', c.mlT+' mL/dia');
+    calcH += crow('Cucharadas medidoras', c.cdas+' cdas ('+c.porc+' x '+p.sc+')');
+    calcH += crow('Masa de polvo', c.grams+' g ('+c.porc+' x '+p.gp+' g)');
+    calcH += crow('kcal aportadas', c.kcalAp+' kcal/dia');
+    if(S.route==='Sonda'){
+      calcH += '<div class="bolo-hdr">Por bolo ('+S.bolos+' bolos/dia)</div>';
+      calcH += crow('Agua/bolo', c.aguaBolo+' mL');
+      calcH += crow('Volumen/bolo', c.mlBolo+' mL');
+      calcH += crow('Cucharadas/bolo', c.cdasBolo+' cdas');
+      calcH += crow('Porciones/bolo', c.pBolo+' porciones');
+    }
+    calcH += prescBox(p.ct, p.cq+' g', 'lata', c.latas, c.lMes, c.grams+' g/dia', c.gMes+' g/mes');
+  } else {
+    calcH += crow('Volumen total', c.mlT+' mL/dia');
+    calcH += crow('Presentacion', p.ct+' de '+p.cq+' mL');
+    if(S.route==='Sonda'&&c.mlBolo!==null){
+      calcH += '<div class="bolo-hdr">Por bolo ('+S.bolos+' bolos/dia)</div>';
+      calcH += crow('Volumen/bolo', c.mlBolo+' mL');
+    }
+    calcH += prescBox(p.ct, p.cq+' mL', p.ct.toLowerCase(), c.unid, c.uMes, c.mlT+' mL/dia', c.mlMes+' mL/mes');
+  }
+
+  return '<div class="product-card">'+
+    '<div class="card-header">'+
+      '<div>'+
+        '<div class="card-name">'+esc(p.nm)+'</div>'+
+        '<span class="lab-badge" style="background:'+lcc.bg+';color:'+lcc.tx+'">'+esc(p.lab)+'</span>'+
+      '</div>'+
+      '<div class="card-header-right">'+
+        '<div class="type-badge '+(isPw?'polvo':'liquido')+'">'+(isPw?'Polvo':'Liquido')+'</div>'+
+        '<div class="card-meta">'+esc(p.ct)+' - '+p.cq+(isPw?'g':'mL')+'</div>'+
+        '<div class="card-meta">'+p.km+' kcal/mL</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="card-body">'+
+      '<div class="card-age">Rango etario: '+esc(ag)+'</div>'+
+      '<div class="ind-tags">'+indH+'</div>'+
+      '<div class="calc-box">'+
+        '<div class="calc-box-t">'+(S.route==='Oral'?'Prescripcion Oral/Dia':'Prescripcion Sonda/Dia')+'</div>'+
+        calcH+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function render(){
+  var d    = derived();
+  var box  = document.getElementById('results');
+  var allCtx = S.nutCtx.concat(S.pathCtx);
+
+  if(!S.age||!S.weight||!S.route){
+    box.innerHTML='<div class="placeholder"><div class="ico">&#x1F9EE;</div><h2>Complete los datos del paciente</h2><p>Ingrese edad, peso, deuda calorica y via de terapia nutricional.</p></div>';
+    return;
+  }
+
+  var ctxT = '';
+  for(var i=0;i<allCtx.length;i++) ctxT+='<span class="s-ctx-tag">'+esc(allCtx[i])+'</span>';
+
+  var html = '<div class="summary-bar">'+
+    '<div class="summary-bar-lbl">Resumen calorico - '+S.route+(S.route==='Sonda'?' - '+S.bolos+' bolos/dia':'')+'</div>'+
+    '<div class="summary-cells">'+
+      '<div class="s-cell"><div class="s-cell-lbl">RCS</div><div class="s-cell-val">'+d.kk+'</div><div class="s-cell-unit">kcal/kg/dia</div></div>'+
+      '<div class="s-cell"><div class="s-cell-lbl">RCE</div><div class="s-cell-val">'+(d.rce||'--')+'</div><div class="s-cell-unit">kcal/dia</div></div>'+
+      '<div class="s-cell"><div class="s-cell-lbl">Deuda</div><div class="s-cell-val">'+S.debtPct+'%</div><div class="s-cell-unit">= '+(d.dk||'--')+' kcal/dia</div></div>'+
+    '</div>'+
+    (allCtx.length>0?'<div class="s-ctx-tags">'+ctxT+'</div>':'')+
+  '</div>';
+
+  var filtered = getFiltered();
+  if(!filtered.length){
+    html+='<div class="empty-state"><div class="ico">&#x1F50D;</div><h3>Sin resultados</h3><p>No se encontraron formulas. Ajuste el contexto clinico o tipo de presentacion.</p></div>';
+    box.innerHTML=html; return;
+  }
+
+  html+='<div class="results-meta"><span class="res-count">'+filtered.length+' formulas sugeridas</span><span class="res-sort">Ordenadas por kcal/mL</span></div>';
+
+  var polvos  = filtered.filter(function(p){return p.t==='pw';}).sort(function(a,b){return b.km-a.km;});
+  var liquids = filtered.filter(function(p){return p.t==='lq';}).sort(function(a,b){return b.km-a.km;});
+
+  if(polvos.length&&(S.pres==='Ambos'||S.pres==='Polvo')){
+    html+='<div class="res-section-hdr polvo">FORMULAS EN POLVO - '+(S.route==='Oral'?'Via oral':'Via sonda - '+S.bolos+' bolos/dia')+'</div>';
+    for(var i=0;i<polvos.length;i++) html+=renderCard(polvos[i],d.dk,allCtx);
+  }
+  if(liquids.length&&(S.pres==='Ambos'||S.pres==='Liquido')){
+    html+='<div class="res-section-hdr liquido">FORMULAS LIQUIDAS - '+(S.route==='Oral'?'Via oral':'Via sonda - '+S.bolos+' bolos/dia')+'</div>';
+    for(var i=0;i<liquids.length;i++) html+=renderCard(liquids[i],d.dk,allCtx);
+  }
+
+  box.innerHTML=html;
+}
+
+function updateSummaryBox(){
+  var d  = derived();
+  var el = document.getElementById('calc-summary-box');
+  if(!S.age){el.innerHTML='';return;}
+  el.innerHTML='<div class="calc-summary">'+
+    '<div class="calc-summary-lbl">Requerimiento segun edad: '+esc(ageRange(S.age))+'</div>'+
+    '<div class="calc-summary-vals">'+
+      '<div class="cs-val"><span class="cs-big">'+d.kk+'</span><span class="cs-unit">kcal/kg/dia (RCS)</span></div>'+
+      (d.rce?'<div class="cs-val"><span class="cs-big t">'+d.rce+'</span><span class="cs-unit">kcal/dia (RCE)</span></div>':'')+
+    '</div></div>';
+}
+
+function updateDebtLabel(){
+  var d = derived();
+  document.getElementById('debt-label').innerHTML=
+    'Deuda calorica: <strong style="color:var(--amber)">'+S.debtPct+'%</strong> del VCT'+
+    (d.dk?' <span style="color:var(--navy);font-weight:800">= '+d.dk+' kcal/dia</span>':'');
+}
+
+function updateBolosLabel(){
+  document.getElementById('bolos-label').innerHTML=
+    'N de bolos/dia: <strong style="color:var(--navy)">'+S.bolos+'</strong>';
+}
+
+function renderCtxBtns(){
+  var nc='', pc='';
+  for(var i=0;i<NUT_CTX.length;i++){
+    var a=S.nutCtx.indexOf(NUT_CTX[i])>=0;
+    nc+='<button class="ctx-btn'+(a?' nut-active':'')+'" onclick="toggleCtx(\'nut\',\''+NUT_CTX[i]+'\')">'+esc(NUT_CTX[i])+'</button>';
+  }
+  for(var i=0;i<PATH_CTX.length;i++){
+    var a=S.pathCtx.indexOf(PATH_CTX[i])>=0;
+    pc+='<button class="ctx-btn'+(a?' path-active':'')+'" onclick="toggleCtx(\'path\',\''+PATH_CTX[i]+'\')">'+esc(PATH_CTX[i])+'</button>';
+  }
+  document.getElementById('nut-ctx').innerHTML=nc;
+  document.getElementById('path-ctx').innerHTML=pc;
+}
+
+function toggleCtx(type,val){
+  var arr = type==='nut' ? S.nutCtx : S.pathCtx;
+  var idx = arr.indexOf(val);
+  if(idx>=0) arr.splice(idx,1); else arr.push(val);
+  renderCtxBtns(); render();
+}
+
+function setRoute(r){
+  S.route=r;
+  document.getElementById('btn-oral').className='route-btn'+(r==='Oral'?' active':'');
+  document.getElementById('btn-sonda').className='route-btn'+(r==='Sonda'?' active':'');
+  document.getElementById('bolos-section').style.display=r==='Sonda'?'block':'none';
+  render();
+}
+
+function setPres(f){
+  S.pres=f;
+  document.getElementById('btn-polvo').className='pres-btn'+(f==='Polvo'?' active':'');
+  document.getElementById('btn-liquido').className='pres-btn'+(f==='Liquido'?' active':'');
+  document.getElementById('btn-ambos').className='pres-btn'+(f==='Ambos'?' active':'');
+  render();
+}
+
+window.onload = function(){
+  renderCtxBtns();
+  render();
+
+  document.getElementById('inp-age').addEventListener('input',function(){
+    S.age=parseFloat(this.value)||0;
+    updateSummaryBox(); updateDebtLabel(); render();
+  });
+  document.getElementById('inp-weight').addEventListener('input',function(){
+    S.weight=parseFloat(this.value)||0;
+    updateDebtLabel(); render();
+  });
+  document.getElementById('inp-debt').addEventListener('input',function(){
+    S.debtPct=+this.value;
+    updateDebtLabel(); render();
+  });
+  document.getElementById('inp-bolos').addEventListener('input',function(){
+    S.bolos=+this.value;
+    updateBolosLabel(); render();
+  });
+};
+</script>
+</body>
+</html>
